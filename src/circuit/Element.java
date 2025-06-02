@@ -18,7 +18,16 @@ public abstract class Element {
 
 //    public abstract int numberOfTerminals();
 
-    public void connectTerminals(int thisTerminal, Element otherElement, int otherTerminal) {
+    /**
+     * Connect two elements together at their specified terminals.
+     * This method will combine the two terminal nodes.
+     *
+     * @param thisTerminal The node on this element
+     * @param otherElement The target element to connect
+     * @param otherTerminal The node on the other element
+     * @return The Node that was removed
+     */
+    public Node connectTerminals(int thisTerminal, Element otherElement, int otherTerminal) {
         // assert 0 <= terminal < n
         Node n1 = this.terminals.get(thisTerminal);
         Node n2 = otherElement.terminals.get(otherTerminal);
@@ -28,6 +37,8 @@ public abstract class Element {
 
         this.terminals.set(thisTerminal, combined);
         otherElement.terminals.set(otherTerminal, combined);
+
+        return old;
     }
 
     public List<Node> getTerminals() {
