@@ -24,4 +24,8 @@ public class Node {
         n2.connections.addAll(n1.connections);
         return n2;
     }
+
+    public Set<Element> getConnections() {
+        return Set.copyOf(connections);
+    }
 }

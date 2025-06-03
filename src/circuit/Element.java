@@ -56,6 +56,6 @@ public abstract class Element {
     }
 
     public List<Node> getTerminals() {
-        return terminals;
+        return List.copyOf(terminals);
     }
 }
