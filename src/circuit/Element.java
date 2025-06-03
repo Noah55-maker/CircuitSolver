@@ -7,16 +7,32 @@ public abstract class Element {
     private final List<Node> terminals;
 
     public Element() {
-//        int n = numberOfTerminals();
-        int n = 2;
+        int n = numberOfTerminals();
         terminals = new ArrayList<>(n);
 
         for (int i = 0; i < n; i++) {
-            terminals.add(new Node());
+            terminals.add(new Node(this));
         }
     }
 
-//    public abstract int numberOfTerminals();
+    public Element(Node... nodes) {
+        int n = numberOfTerminals();
+        if (nodes.length != n) {
+            String msg = String.format("Element requires %d nodes, %d %s provided", n, nodes.length, nodes.length == 1 ? "was" : "were");
+            throw new IllegalArgumentException(msg);
+        }
+
+        terminals = new ArrayList<>(n);
+
+        for (Node node : nodes) {
+            terminals.add(node);
+            node.addConnection(this);
+        }
+    }
+
+    public int numberOfTerminals() {
+        return 2;
+    }
 
     /**
      * Connect two elements together at their specified terminals.

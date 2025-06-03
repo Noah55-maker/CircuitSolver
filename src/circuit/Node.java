@@ -1,13 +1,19 @@
 package circuit;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
 public class Node {
     private final Set<Element> connections;
 
-    public Node() {
+    public Node(Element... elements) {
         connections = new HashSet<>();
+        Collections.addAll(connections, elements);
+    }
+
+    public void addConnection(Element e) {
+        connections.add(e);
     }
 
     public static Node combine(Node n1, Node n2) {
