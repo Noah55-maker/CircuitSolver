@@ -39,6 +39,7 @@ public class Circuit {
 
         Element cs1 = new CurrentSource(8e-3, G, A);
         Element cs2 = new CurrentSource(2e-3, A, C);
+        Element g = new Ground(G);
 
         Element r1 = new Resistor(3e3, G, A);
         Element r2 = new Resistor(6e3, A, B);
