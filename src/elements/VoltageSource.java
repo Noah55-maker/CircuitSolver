@@ -20,4 +20,9 @@ public class VoltageSource extends Element {
     public double getVoltage() {
         return voltage;
     }
+
+    @Override
+    public int numberOfTerminals() {
+        return 2;
+    }
 }

@@ -19,4 +19,9 @@ public class Resistor extends Element {
     public double getResistance() {
         return resistance;
     }
+
+    @Override
+    public int numberOfTerminals() {
+        return 2;
+    }
 }

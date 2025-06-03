@@ -30,9 +30,7 @@ public abstract class Element {
         }
     }
 
-    public int numberOfTerminals() {
-        return 2;
-    }
+    public abstract int numberOfTerminals();
 
     /**
      * Connect two elements together at their specified terminals.

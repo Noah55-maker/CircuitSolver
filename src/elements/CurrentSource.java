@@ -20,4 +20,9 @@ public class CurrentSource extends Element {
     public double getCurrent() {
         return current;
     }
+
+    @Override
+    public int numberOfTerminals() {
+        return 2;
+    }
 }
