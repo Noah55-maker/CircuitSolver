@@ -5,20 +5,25 @@ import java.util.List;
 
 public abstract class Element {
     private final List<Node> terminals;
+    private final String label;
+    private static int count;
 
-    public Element() {
+    protected Element() {
         int n = numberOfTerminals();
         terminals = new ArrayList<>(n);
 
         for (int i = 0; i < n; i++) {
             terminals.add(new Node(this));
         }
+
+        label = String.format("%s %d", this.getClass().getSimpleName(), ++count);
     }
 
-    public Element(Node... nodes) {
+    protected Element(Node... nodes) {
         int n = numberOfTerminals();
         if (nodes.length != n) {
-            String msg = String.format("Element requires %d nodes, %d %s provided", n, nodes.length, nodes.length == 1 ? "was" : "were");
+            String msg = String.format("Element %s requires %d nodes, %d %s provided",
+                    this.getClass().getSimpleName(), n, nodes.length, nodes.length == 1 ? "was" : "were");
             throw new IllegalArgumentException(msg);
         }
 
@@ -28,6 +33,8 @@ public abstract class Element {
             terminals.add(node);
             node.addConnection(this);
         }
+
+        label = String.format("%s %d", this.getClass().getSimpleName(), ++count);
     }
 
     public abstract int numberOfTerminals();
@@ -57,5 +64,9 @@ public abstract class Element {
 
     public List<Node> getTerminals() {
         return List.copyOf(terminals);
+    }
+
+    public String getLabel() {
+        return label;
     }
 }
