@@ -13,9 +13,18 @@ public class Circuit {
         nodes = new HashSet<>();
     }
 
-    public boolean addElement(Element e) {
+    public Circuit(Circuit other) {
+        this.elements = new HashSet<>(other.elements);
+        this.nodes = new HashSet<>(other.nodes);
+    }
+
+    public void addElement(Element e) {
         nodes.addAll(e.getTerminals());
-        return elements.add(e);
+        elements.add(e);
+    }
+
+    public void addElements(Element... elements) {
+        for (Element e : elements) addElement(e);
     }
 
     public static void main(String[] args) {
@@ -46,5 +55,13 @@ public class Circuit {
         Element r3 = new Resistor(6e3, G, B);
         Element r4 = new Resistor(2e3, B, C);
         Element r5 = new Resistor(1e3, G, C);
+    }
+
+    public Set<Node> getNodes() {
+        return nodes;
+    }
+
+    public Set<Element> getElements() {
+        return elements;
     }
 }
