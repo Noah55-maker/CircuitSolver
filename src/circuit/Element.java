@@ -1,5 +1,7 @@
 package circuit;
 
+import elements.Terminal;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -64,6 +66,10 @@ public abstract class Element {
 
     public List<Node> getTerminals() {
         return List.copyOf(terminals);
+    }
+
+    public Node terminal(Terminal terminal) {
+        return terminals.get(terminal.getValue());
     }
 
     public String getLabel() {
