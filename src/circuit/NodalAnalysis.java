@@ -62,6 +62,14 @@ public class NodalAnalysis {
                     rhs[counter] = vs.getVoltage();
                     break;
                 }
+                else if (e instanceof VoltageDependentCurrentSource vdcs) {
+                    char direction = n.equals(e.terminal(Terminal.Active_Positive)) ? '+' : '-';
+                    int multiplier = n.equals(e.terminal(Terminal.Active_Positive)) ? 1 : -1;
+                    System.out.printf("Current = %c(%s - %s)*%f\n", direction, vdcs.getV_high(), vdcs.getV_low(), vdcs.getCoefficient());
+
+                    lhs[counter][nodeNum(vdcs.getV_high())-1] += multiplier * vdcs.getCoefficient();
+                    lhs[counter][nodeNum(vdcs.getV_low())-1] -= multiplier * vdcs.getCoefficient();
+                }
                 else {
                     System.out.printf("Element of type %s is ignored\n",  e.getClass().getSimpleName());
                 }
