@@ -16,7 +16,6 @@ public class VoltageSource extends Element {
         this.voltage = voltage;
     }
 
-    // polarity may have to be factored into this - ie take a param with terminal #
     public double getVoltage() {
         return voltage;
     }
