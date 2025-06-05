@@ -1,5 +1,7 @@
 package circuit;
 
+import elements.Ground;
+
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -30,6 +32,13 @@ public class Node {
 
     public Set<Element> getConnections() {
         return Set.copyOf(connections);
+    }
+
+    public boolean isGrounded() {
+        for (Element e : connections) {
+            if (e instanceof Ground) return true;
+        }
+        return false;
     }
 
     public String getLabel() {
