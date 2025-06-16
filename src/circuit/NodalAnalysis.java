@@ -3,8 +3,7 @@ package circuit;
 import algebra.SystemOfEquationSolver;
 import elements.*;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class NodalAnalysis {
     private final List<Node> nodes;
@@ -13,6 +12,9 @@ public class NodalAnalysis {
     private final double[][] lhs;
     private final double[] rhs;
     private final boolean[] visited;
+
+    private final ArrayList<Set<Node>> eqs;
+    private int eqIndex;
 
     private static int nodeIndex(Node n) {
         return Integer.parseInt(n.getLabel().split(" ")[1]) - 1;
@@ -25,6 +27,8 @@ public class NodalAnalysis {
         lhs = new double[numNodes][numNodes];
         rhs = new double[numNodes];
         visited = new boolean[numNodes];
+
+        eqs = new ArrayList<>();
     }
 
     public static void solve(Circuit c) {
@@ -36,12 +40,13 @@ public class NodalAnalysis {
         if (visited[i])
             return;
 
-        visited[i] = true;
-
         Node n = nodes.get(i);
 
+        visited[i] = true;
+        eqs.get(eqs.size()-1).add(n);
+
         for (Element e : n.getConnections()) {
-            if (e instanceof VoltageSource || e instanceof VoltageDependentVoltageSource || e instanceof VoltageDependentCurrentSource) {
+            if (e instanceof VoltageSource || e instanceof VoltageDependentVoltageSource) {
                 Node otherNode = e.getTerminals().get(0).equals(n) ? e.getTerminals().get(1) : e.getTerminals().get(0);
                 int otherIndex = nodes.indexOf(otherNode);
 
@@ -49,21 +54,75 @@ public class NodalAnalysis {
                     continue;
 
                 System.out.println("Supernode over element " + e);
+                if (e instanceof VoltageSource vs) {
+                    System.out.print("Create supernode: ");
+                    System.out.printf("%s - %s = %f\n", e.terminal(Terminal.Active_Positive), e.terminal(Terminal.Active_Negative), vs.getVoltage());
+
+                    lhs[eqIndex] = new double[numNodes];
+                    lhs[eqIndex][nodeIndex(e.terminal(Terminal.Active_Positive))] = 1;
+                    lhs[eqIndex][nodeIndex(e.terminal(Terminal.Active_Negative))] = -1;
+                    rhs[eqIndex] = vs.getVoltage();
+                }
+                else if (e instanceof VoltageDependentVoltageSource vdvs) {
+                    System.out.print("Create supernode: ");
+                    System.out.printf("%s - %s = %f*(%s - %s)\n", e.terminal(Terminal.Active_Positive), e.terminal(Terminal.Active_Negative), vdvs.getCoefficient(),
+                            vdvs.getV_high(), vdvs.getV_low());
+
+                    // (V+ - V-) + c*(V_low - V_high) = 0
+                    lhs[eqIndex] = new double[numNodes];
+                    lhs[eqIndex][nodeIndex(e.terminal(Terminal.Active_Positive))] = 1;
+                    lhs[eqIndex][nodeIndex(e.terminal(Terminal.Active_Negative))] = -1;
+                    lhs[eqIndex][nodeIndex(vdvs.getV_low())] += vdvs.getCoefficient();
+                    lhs[eqIndex][nodeIndex(vdvs.getV_high())] -= vdvs.getCoefficient();
+                    rhs[eqIndex] = 0;
+                }
+                eqIndex++;
+
                 findSupernodes(otherIndex);
             }
         }
     }
 
     private void solve() {
-
+        eqIndex = 0;
         for (int i = 0; i < nodes.size(); i++) {
+            if (visited[i])
+                continue;
+
+            eqs.add(new HashSet<>());
             findSupernodes(i);
         }
         System.out.println();
 
-        int counter = 0;
-        for (Node n : nodes) {
-            createNodeEquation(n, counter);
+        for (int i = 0; i < eqs.size(); i++) {
+            System.out.print(i + ":");
+            for (Node n : eqs.get(i)) {
+                System.out.print(" " + nodeIndex(n));
+            }
+            System.out.println();
+        }
+
+        int counter = eqIndex;
+        System.out.println("There were " + eqIndex + " supernode eqs");
+
+        for (Set<Node> eq : eqs) {
+            System.out.println("Supernode eq " + counter);
+            Node groundedNode = null;
+            for (Node n : eq)
+                if (n.isGrounded()) groundedNode = n;
+            if (groundedNode != null) {
+                System.out.println("Node voltage is 0");
+                lhs[counter][nodeIndex(groundedNode)] = 1;
+                rhs[counter] = 0;
+                counter++;
+
+                System.out.println();
+                continue;
+            }
+
+            for (Node n : eq) {
+                createNodeEquation(n, counter);
+            }
             counter++;
         }
 
@@ -101,16 +160,6 @@ public class NodalAnalysis {
 
                 rhs[eqIndex] -= direction * cs.getCurrent();
             }
-            else if (e instanceof VoltageSource vs) {
-                System.out.print("Create supernode: ");
-                System.out.printf("%s - %s = %f\n", e.terminal(Terminal.Active_Positive), e.terminal(Terminal.Active_Negative), vs.getVoltage());
-
-                lhs[eqIndex] = new double[numNodes];
-                lhs[eqIndex][nodeIndex(e.terminal(Terminal.Active_Positive))] = 1;
-                lhs[eqIndex][nodeIndex(e.terminal(Terminal.Active_Negative))] = -1;
-                rhs[eqIndex] = vs.getVoltage();
-                break;
-            }
             else if (e instanceof VoltageDependentCurrentSource vdcs) {
                 char direction = n.equals(e.terminal(Terminal.Active_Positive)) ? '+' : '-';
                 int multiplier = n.equals(e.terminal(Terminal.Active_Positive)) ? 1 : -1;
@@ -119,19 +168,11 @@ public class NodalAnalysis {
                 lhs[eqIndex][nodeIndex(vdcs.getV_high())] += multiplier * vdcs.getCoefficient();
                 lhs[eqIndex][nodeIndex(vdcs.getV_low())] -= multiplier * vdcs.getCoefficient();
             }
-            else if (e instanceof VoltageDependentVoltageSource vdvs) {
-                System.out.print("Create supernode: ");
-                System.out.printf("%s - %s = %f*(%s - %s)\n", e.terminal(Terminal.Active_Positive), e.terminal(Terminal.Active_Negative), vdvs.getCoefficient(),
-                        vdvs.getV_high(), vdvs.getV_low());
-
-                // (V+ - V-) + c*(V_low - V_high) = 0
-                lhs[eqIndex] = new double[numNodes];
-                lhs[eqIndex][nodeIndex(e.terminal(Terminal.Active_Positive))] = 1;
-                lhs[eqIndex][nodeIndex(e.terminal(Terminal.Active_Negative))] = -1;
-                lhs[eqIndex][nodeIndex(vdvs.getV_low())] += vdvs.getCoefficient();
-                lhs[eqIndex][nodeIndex(vdvs.getV_high())] -= vdvs.getCoefficient();
-                rhs[eqIndex] = 0;
-                break;
+            else if (e instanceof VoltageSource) {
+                System.out.println("Element of type VoltageSource, skipping");
+            }
+            else if (e instanceof VoltageDependentVoltageSource) {
+                System.out.println("Element of type VDVS, skipping");
             }
             else {
                 System.out.printf("Element of type %s is ignored\n",  e.getClass().getSimpleName());
