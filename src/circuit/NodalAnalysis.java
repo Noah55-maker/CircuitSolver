@@ -7,33 +7,74 @@ import java.util.*;
 
 public class NodalAnalysis {
     private final List<Node> nodes;
-    private final List<Element> elements;
     private final int numNodes;
-    private final double[][] lhs;
-    private final double[] rhs;
-    private final boolean[] visited;
 
-    private final ArrayList<Set<Node>> eqs;
+    private final ArrayList<Set<Node>> supernodes;
+    private final boolean[] visited;
     private int eqIndex;
 
-    private static int nodeIndex(Node n) {
-        return Integer.parseInt(n.getLabel().split(" ")[1]) - 1;
-    }
+    private final double[][] lhs;
+    private final double[] rhs;
 
     private NodalAnalysis(Circuit c) {
         nodes = new ArrayList<>(c.getNodes());
-        elements = new ArrayList<>(c.getElements());
         numNodes = nodes.size();
         lhs = new double[numNodes][numNodes];
         rhs = new double[numNodes];
         visited = new boolean[numNodes];
 
-        eqs = new ArrayList<>();
+        supernodes = new ArrayList<>();
+    }
+
+    private int nodeIndex(Node n) {
+        return Integer.parseInt(n.getLabel().split(" ")[1]) - 1;
     }
 
     public static void solve(Circuit c) {
         NodalAnalysis nodal = new NodalAnalysis(c);
         nodal.solve();
+    }
+
+    private void solve() {
+        eqIndex = 0;
+        for (int i = 0; i < nodes.size(); i++) {
+            if (visited[i])
+                continue;
+
+            supernodes.add(new HashSet<>());
+            findSupernodes(i);
+        }
+        System.out.println();
+
+        for (int i = 0; i < supernodes.size(); i++) {
+            System.out.print("Supernode group " + (i+1) + ": ");
+            for (Node n : supernodes.get(i))
+                System.out.print(n + ", ");
+            System.out.println();
+        }
+
+        for (Set<Node> eq : supernodes) {
+            System.out.println("Equation " + eqIndex);
+            Node groundedNode = null;
+            for (Node n : eq)
+                if (n.isGrounded()) groundedNode = n;
+            if (groundedNode != null) {
+                System.out.println(groundedNode + " is grounded");
+                lhs[eqIndex][nodeIndex(groundedNode)] = 1;
+                rhs[eqIndex] = 0;
+                eqIndex++;
+
+                System.out.println();
+                continue;
+            }
+
+            for (Node n : eq) {
+                createNodeEquation(n, eqIndex);
+            }
+            eqIndex++;
+        }
+
+        SystemOfEquationSolver.solve(lhs, rhs);
     }
 
     private void findSupernodes(int i) {
@@ -43,7 +84,7 @@ public class NodalAnalysis {
         Node n = nodes.get(i);
 
         visited[i] = true;
-        eqs.get(eqs.size()-1).add(n);
+        supernodes.get(supernodes.size()-1).add(n);
 
         for (Element e : n.getConnections()) {
             if (e instanceof VoltageSource || e instanceof VoltageDependentVoltageSource) {
@@ -55,78 +96,27 @@ public class NodalAnalysis {
 
                 System.out.println("Supernode over element " + e);
                 if (e instanceof VoltageSource vs) {
-                    System.out.print("Create supernode: ");
-                    System.out.printf("%s - %s = %f\n", e.terminal(Terminal.Active_Positive), e.terminal(Terminal.Active_Negative), vs.getVoltage());
+                    System.out.printf("\t%s - %s = %f\n", e.terminal(Terminal.Active_Positive), e.terminal(Terminal.Active_Negative), vs.getVoltage());
 
-                    lhs[eqIndex] = new double[numNodes];
                     lhs[eqIndex][nodeIndex(e.terminal(Terminal.Active_Positive))] = 1;
                     lhs[eqIndex][nodeIndex(e.terminal(Terminal.Active_Negative))] = -1;
                     rhs[eqIndex] = vs.getVoltage();
                 }
                 else if (e instanceof VoltageDependentVoltageSource vdvs) {
-                    System.out.print("Create supernode: ");
-                    System.out.printf("%s - %s = %f*(%s - %s)\n", e.terminal(Terminal.Active_Positive), e.terminal(Terminal.Active_Negative), vdvs.getCoefficient(),
-                            vdvs.getV_high(), vdvs.getV_low());
+                    System.out.printf("\t%s - %s = %f*(%s - %s)\n", e.terminal(Terminal.Active_Positive), e.terminal(Terminal.Active_Negative),
+                            vdvs.getCoefficient(), vdvs.getV_high(), vdvs.getV_low());
 
                     // (V+ - V-) + c*(V_low - V_high) = 0
-                    lhs[eqIndex] = new double[numNodes];
                     lhs[eqIndex][nodeIndex(e.terminal(Terminal.Active_Positive))] = 1;
                     lhs[eqIndex][nodeIndex(e.terminal(Terminal.Active_Negative))] = -1;
                     lhs[eqIndex][nodeIndex(vdvs.getV_low())] += vdvs.getCoefficient();
                     lhs[eqIndex][nodeIndex(vdvs.getV_high())] -= vdvs.getCoefficient();
-                    rhs[eqIndex] = 0;
                 }
                 eqIndex++;
 
                 findSupernodes(otherIndex);
             }
         }
-    }
-
-    private void solve() {
-        eqIndex = 0;
-        for (int i = 0; i < nodes.size(); i++) {
-            if (visited[i])
-                continue;
-
-            eqs.add(new HashSet<>());
-            findSupernodes(i);
-        }
-        System.out.println();
-
-        for (int i = 0; i < eqs.size(); i++) {
-            System.out.print(i + ":");
-            for (Node n : eqs.get(i)) {
-                System.out.print(" " + nodeIndex(n));
-            }
-            System.out.println();
-        }
-
-        int counter = eqIndex;
-        System.out.println("There were " + eqIndex + " supernode eqs");
-
-        for (Set<Node> eq : eqs) {
-            System.out.println("Supernode eq " + counter);
-            Node groundedNode = null;
-            for (Node n : eq)
-                if (n.isGrounded()) groundedNode = n;
-            if (groundedNode != null) {
-                System.out.println("Node voltage is 0");
-                lhs[counter][nodeIndex(groundedNode)] = 1;
-                rhs[counter] = 0;
-                counter++;
-
-                System.out.println();
-                continue;
-            }
-
-            for (Node n : eq) {
-                createNodeEquation(n, counter);
-            }
-            counter++;
-        }
-
-        SystemOfEquationSolver.solve(lhs, rhs);
     }
 
     private void createNodeEquation(Node n, int eqIndex) {
