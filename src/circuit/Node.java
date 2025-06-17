@@ -17,6 +17,12 @@ public class Node {
         label = "Node " + ++count;
     }
 
+    public Node(String label, Element... elements) {
+        connections = new HashSet<>();
+        Collections.addAll(connections, elements);
+        this.label = label;
+    }
+
     public void addConnection(Element e) {
         connections.add(e);
     }

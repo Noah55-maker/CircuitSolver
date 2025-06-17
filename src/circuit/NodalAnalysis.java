@@ -27,7 +27,7 @@ public class NodalAnalysis {
     }
 
     private int nodeIndex(Node n) {
-        return Integer.parseInt(n.getLabel().split(" ")[1]) - 1;
+        return nodes.indexOf(n);
     }
 
     public static void solve(Circuit c) {
