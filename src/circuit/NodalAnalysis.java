@@ -52,9 +52,10 @@ public class NodalAnalysis {
                 System.out.print(n + ", ");
             System.out.println();
         }
+        System.out.println();
 
         for (Set<Node> eq : supernodes) {
-            System.out.println("Equation " + eqIndex);
+            System.out.println("Equation " + (eqIndex+1));
             Node groundedNode = null;
             for (Node n : eq)
                 if (n.isGrounded()) groundedNode = n;
@@ -120,7 +121,7 @@ public class NodalAnalysis {
     }
 
     private void createNodeEquation(Node n, int eqIndex) {
-        System.out.println(n);
+        System.out.println("Node: " + n);
 
         if (n.isGrounded()) {
             System.out.println("Node voltage is 0");
