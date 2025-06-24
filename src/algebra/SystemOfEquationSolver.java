@@ -98,8 +98,7 @@ public class SystemOfEquationSolver {
 
     // equation[a] -= equation[b] * num
     private void subRow(int a, int b, double num) {
-        int n = lhs.length;
-        for (int i = 0; i < n; i++)
+        for (int i = 0; i < lhs.length; i++)
             lhs[a][i] -= lhs[b][i] * num;
 
         rhs[a] -= rhs[b] * num;
@@ -107,9 +106,8 @@ public class SystemOfEquationSolver {
 
     // equation[r] /= num
     private void divRow(int r, double num) {
-        for (int i = 0; i < lhs.length; i++) {
+        for (int i = 0; i < lhs.length; i++)
             lhs[r][i] /= num;
-        }
 
         rhs[r] /= num;
     }
@@ -117,7 +115,7 @@ public class SystemOfEquationSolver {
     private void print() {
         int n = lhs.length;
         for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n -1; j++) {
+            for (int j = 0; j < n-1; j++) {
                 System.out.printf("%+.5f\t+ ", lhs[i][j]);
             }
             System.out.printf("%+.5f\t= %+.5f\n", lhs[i][n-1], rhs[i]);
