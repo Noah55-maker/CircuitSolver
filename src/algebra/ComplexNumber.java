@@ -51,6 +51,14 @@ public class ComplexNumber {
         return angle() * 180 / Math.PI;
     }
 
+    public double getReal() {
+        return this.real;
+    }
+
+    public double getImaginary() {
+        return this.imaginary;
+    }
+
     public void add(ComplexNumber other) {
         this.real += other.real;
         this.imaginary += other.imaginary;
